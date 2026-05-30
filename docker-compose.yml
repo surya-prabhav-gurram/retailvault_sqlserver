@@ -1,0 +1,95 @@
+# ============================================================
+# RetailVault — SQL Server Edition
+# Docker Compose for local development
+# ============================================================
+version: '3.8'
+
+services:
+
+  # ----------------------------------------------------------
+  # Microsoft SQL Server 2022 Developer Edition (free license)
+  # ----------------------------------------------------------
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: retailvault-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -No -Q 'SELECT 1' || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd' -Q 'SELECT 1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  # ----------------------------------------------------------
+  # DB Init — creates databases, runs schemas + stored procs
+  # ----------------------------------------------------------
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: retailvault-db-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./backend/src/main/resources:/scripts
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+    command: >
+      bash -c "
+        SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+        if [ ! -f \"$$SQLCMD\" ]; then SQLCMD=/opt/mssql-tools/bin/sqlcmd; fi
+        echo 'Creating databases...'
+        $$SQLCMD -S sqlserver -U sa -P 'YourStrong!Passw0rd' -No -Q \"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name='RetailVault_OLTP') CREATE DATABASE RetailVault_OLTP; IF NOT EXISTS (SELECT name FROM sys.databases WHERE name='RetailVault_Warehouse') CREATE DATABASE RetailVault_Warehouse;\"
+        echo 'Loading OLTP schema...'
+        $$SQLCMD -S sqlserver -U sa -P 'YourStrong!Passw0rd' -No -d RetailVault_OLTP -i /scripts/schema-oltp.sql
+        echo 'Loading Warehouse schema...'
+        $$SQLCMD -S sqlserver -U sa -P 'YourStrong!Passw0rd' -No -d RetailVault_Warehouse -i /scripts/schema-warehouse.sql
+        echo 'Loading stored procedures...'
+        $$SQLCMD -S sqlserver -U sa -P 'YourStrong!Passw0rd' -No -d RetailVault_Warehouse -i /scripts/stored-procedures.sql
+        echo 'Seeding data...'
+        $$SQLCMD -S sqlserver -U sa -P 'YourStrong!Passw0rd' -No -d RetailVault_OLTP -i /scripts/seed-data.sql
+        echo 'DB init complete!'
+      "
+    restart: on-failure
+
+  # ----------------------------------------------------------
+  # Spring Boot Backend
+  # ----------------------------------------------------------
+  backend:
+    build: ./backend
+    container_name: retailvault-backend
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      SPRING_DATASOURCE_OLTP_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=RetailVault_OLTP;encrypt=false;trustServerCertificate=true"
+      SPRING_DATASOURCE_OLTP_USERNAME: sa
+      SPRING_DATASOURCE_OLTP_PASSWORD: "YourStrong!Passw0rd"
+      SPRING_DATASOURCE_WAREHOUSE_URL: "jdbc:sqlserver://sqlserver:1433;databaseName=RetailVault_Warehouse;encrypt=false;trustServerCertificate=true"
+      SPRING_DATASOURCE_WAREHOUSE_USERNAME: sa
+      SPRING_DATASOURCE_WAREHOUSE_PASSWORD: "YourStrong!Passw0rd"
+    ports:
+      - "8080:8080"
+
+  # ----------------------------------------------------------
+  # React Frontend
+  # ----------------------------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: retailvault-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_URL: http://localhost:8080
+
+volumes:
+  sqlserver_data:
