@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "categories", catalog = "RetailVault_OLTP", schema = "dbo")
+@Table(name = "categories", schema = "dbo")
 public class Category {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")

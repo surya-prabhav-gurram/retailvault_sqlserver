@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 @Data
 @Entity
-@Table(name = "fact_sales", catalog = "RetailVault_Warehouse", schema = "dbo")
+@Table(name = "fact_sales", schema = "dbo")
 public class FactSales {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "sales_key")

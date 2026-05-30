@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "suppliers", catalog = "RetailVault_OLTP", schema = "dbo")
+@Table(name = "suppliers", schema = "dbo")
 public class Supplier {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "supplier_id")

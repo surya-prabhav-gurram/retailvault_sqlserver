@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "dim_customer", catalog = "RetailVault_Warehouse", schema = "dbo")
+@Table(name = "dim_customer", schema = "dbo")
 public class DimCustomer {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "customer_key")

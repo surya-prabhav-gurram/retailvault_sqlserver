@@ -6,7 +6,7 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "dim_date", catalog = "RetailVault_Warehouse", schema = "dbo")
+@Table(name = "dim_date", schema = "dbo")
 public class DimDate {
     @Id
     @Column(name = "date_key")

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "etl_run_log", catalog = "RetailVault_Warehouse", schema = "dbo")
+@Table(name = "etl_run_log", schema = "dbo")
 public class EtlRunLog {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

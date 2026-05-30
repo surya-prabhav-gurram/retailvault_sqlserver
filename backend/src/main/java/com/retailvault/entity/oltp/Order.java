@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Entity
-@Table(name = "orders", catalog = "RetailVault_OLTP", schema = "dbo")
+@Table(name = "orders", schema = "dbo")
 public class Order {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "inventory_log", catalog = "RetailVault_OLTP", schema = "dbo")
+@Table(name = "inventory_log", schema = "dbo")
 public class InventoryLog {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "log_id")

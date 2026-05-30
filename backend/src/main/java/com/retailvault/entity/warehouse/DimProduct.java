@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "dim_product", catalog = "RetailVault_Warehouse", schema = "dbo")
+@Table(name = "dim_product", schema = "dbo")
 public class DimProduct {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_key")
