@@ -251,32 +251,26 @@ BEGIN
     SET NOCOUNT ON;
 
     WITH Sales AS (
-        SELECT
-            fs.product_key,
-            SUM(fs.quantity) AS total_units_sold
-        FROM fact_sales fs
-        GROUP BY fs.product_key
+        SELECT fs.product_key, SUM(fs.quantity) AS total_units_sold
+        FROM fact_sales fs GROUP BY fs.product_key
     ),
     AvgStock AS (
-        SELECT
-            fi.product_key,
-            AVG(CAST(fi.stock_after AS FLOAT)) AS avg_stock
+        SELECT fi.product_key, AVG(CAST(fi.stock_after AS FLOAT)) AS avg_stock
+        FROM fact_inventory fi GROUP BY fi.product_key
+    ),
+    LatestStock AS (
+        SELECT fi.product_key, fi.stock_after AS current_stock,
+            ROW_NUMBER() OVER (PARTITION BY fi.product_key ORDER BY fi.date_key DESC, fi.inventory_key DESC) AS rn
         FROM fact_inventory fi
-        GROUP BY fi.product_key
     )
-    SELECT
-        dp.product_name,
-        dp.category_name,
-        s.total_units_sold,
-        CAST(
-            CASE WHEN av.avg_stock > 0
-                 THEN s.total_units_sold / av.avg_stock
-                 ELSE 0 END
-        AS DECIMAL(10,2)) AS turnover_ratio,
-        CAST(av.avg_stock AS INT) AS avg_stock_level
+    SELECT dp.product_name, dp.category_name, s.total_units_sold,
+        CAST(CASE WHEN av.avg_stock > 0 THEN s.total_units_sold / av.avg_stock ELSE 0 END AS DECIMAL(10,2)) AS turnover_ratio,
+        CAST(av.avg_stock AS INT) AS avg_stock_level,
+        ISNULL(ls.current_stock, 0) AS current_stock
     FROM Sales s
-    INNER JOIN AvgStock    av ON s.product_key = av.product_key
+    INNER JOIN AvgStock av ON s.product_key = av.product_key
     INNER JOIN dim_product dp ON s.product_key = dp.product_key
+    LEFT JOIN LatestStock ls ON s.product_key = ls.product_key AND ls.rn = 1
     WHERE dp.is_current = 1
     ORDER BY turnover_ratio DESC;
 END
@@ -366,7 +360,7 @@ BEGIN
         SELECT
             s.store_id, s.store_name, s.city, s.state, s.region,
             s.store_type, s.opened_date, CAST(GETDATE() AS DATE), 1
-        FROM RetailVault_OLTP.dbo.stores s
+        FROM dbo.stores s
         WHERE NOT EXISTS (
             SELECT 1 FROM dim_store ds
             WHERE ds.store_id = s.store_id AND ds.is_current = 1
@@ -386,9 +380,9 @@ BEGIN
             ISNULL(sup.country, 'Unknown'),
             p.unit_price, p.cost_price,
             CAST(GETDATE() AS DATE), 1
-        FROM RetailVault_OLTP.dbo.products p
-        LEFT JOIN RetailVault_OLTP.dbo.categories c ON p.category_id = c.category_id
-        LEFT JOIN RetailVault_OLTP.dbo.suppliers  sup ON p.supplier_id = sup.supplier_id
+        FROM dbo.products p
+        LEFT JOIN dbo.categories c ON p.category_id = c.category_id
+        LEFT JOIN dbo.suppliers  sup ON p.supplier_id = sup.supplier_id
         WHERE NOT EXISTS (
             SELECT 1 FROM dim_product dp
             WHERE dp.product_id = p.product_id AND dp.is_current = 1
@@ -398,7 +392,7 @@ BEGIN
         -- ---- Dim Supplier ----
         INSERT INTO dim_supplier (supplier_id, supplier_name, contact_name, country, is_current)
         SELECT s.supplier_id, s.supplier_name, s.contact_name, s.country, 1
-        FROM RetailVault_OLTP.dbo.suppliers s
+        FROM dbo.suppliers s
         WHERE NOT EXISTS (
             SELECT 1 FROM dim_supplier ds
             WHERE ds.supplier_id = s.supplier_id AND ds.is_current = 1
@@ -410,7 +404,7 @@ BEGIN
         SELECT c.customer_id,
                LTRIM(ISNULL(c.first_name,'') + ' ' + ISNULL(c.last_name,'')),
                c.city, c.state, 1
-        FROM RetailVault_OLTP.dbo.customers c
+        FROM dbo.customers c
         WHERE NOT EXISTS (
             SELECT 1 FROM dim_customer dc
             WHERE dc.customer_id = c.customer_id AND dc.is_current = 1
@@ -436,9 +430,9 @@ BEGIN
             oi.line_total,
             oi.quantity * ISNULL(p.cost_price, 0),
             oi.line_total - oi.quantity * ISNULL(p.cost_price, 0)
-        FROM RetailVault_OLTP.dbo.order_items oi
-        INNER JOIN RetailVault_OLTP.dbo.orders   o  ON oi.order_id   = o.order_id
-        INNER JOIN RetailVault_OLTP.dbo.products p  ON oi.product_id = p.product_id
+        FROM dbo.order_items oi
+        INNER JOIN dbo.orders   o  ON oi.order_id   = o.order_id
+        INNER JOIN dbo.products p  ON oi.product_id = p.product_id
         INNER JOIN dim_store   ds ON o.store_id       = ds.store_id   AND ds.is_current = 1
         INNER JOIN dim_product dp ON oi.product_id    = dp.product_id AND dp.is_current = 1
         LEFT  JOIN dim_customer dc ON o.customer_id   = dc.customer_id AND dc.is_current = 1
@@ -466,8 +460,8 @@ BEGIN
             il.stock_after,
             15,  -- configurable reorder threshold
             CASE WHEN il.stock_after < 15 THEN 1 ELSE 0 END
-        FROM RetailVault_OLTP.dbo.inventory_log il
-        INNER JOIN RetailVault_OLTP.dbo.products p ON il.product_id = p.product_id
+        FROM dbo.inventory_log il
+        INNER JOIN dbo.products p ON il.product_id = p.product_id
         INNER JOIN dim_store   ds   ON il.store_id      = ds.store_id   AND ds.is_current = 1
         INNER JOIN dim_product dp   ON il.product_id    = dp.product_id AND dp.is_current = 1
         LEFT  JOIN dim_supplier dsup ON p.supplier_id   = dsup.supplier_id AND dsup.is_current = 1

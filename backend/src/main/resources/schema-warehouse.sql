@@ -147,15 +147,6 @@ GO
 -- Columnstore index on fact_sales for OLAP scan performance
 -- ============================================================
 
--- Nonclustered columnstore on fact_sales (SQL Server 2022 feature — massive OLAP speedup)
-IF NOT EXISTS (
-    SELECT * FROM sys.indexes
-    WHERE name = 'ncci_fact_sales' AND object_id = OBJECT_ID('fact_sales')
-)
-CREATE NONCLUSTERED COLUMNSTORE INDEX ncci_fact_sales
-    ON fact_sales (date_key, store_key, product_key, customer_key,
-                   quantity, net_revenue, gross_profit, cost_of_goods);
-GO
 
 -- Standard covering index for date-range slices (used by stored procs)
 CREATE NONCLUSTERED INDEX idx_fs_date_store
