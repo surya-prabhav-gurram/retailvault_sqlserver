@@ -37,3 +37,4 @@ export const demoApi = {
   generateOrders: (count, scenario = 'NORMAL') => api.post(`/demo/generate-orders?count=${count}&scenario=${scenario}`),
   restockInventory: () => api.post('/demo/restock-inventory'),
 };
+# cache bust Sat May 30 13:37:19 CDT 2026
