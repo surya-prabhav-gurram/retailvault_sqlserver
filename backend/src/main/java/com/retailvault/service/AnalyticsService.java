@@ -234,7 +234,7 @@ public class AnalyticsService {
                             rs.getString("category_name"),
                             toLong(rs.getObject("total_units_sold")),
                             rs.getDouble("avg_stock_level"),
-                            rs.getInt("avg_stock_level"),
+                            15,
                             rs.getInt("current_stock")
                     ));
                 }
