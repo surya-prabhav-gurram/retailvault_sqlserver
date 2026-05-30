@@ -4,6 +4,8 @@ COPY frontend/package*.json ./
 RUN npm install --legacy-peer-deps && \
     npm install --legacy-peer-deps ajv@^8 ajv-keywords@^5
 COPY frontend/ .
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
 RUN npm run build
 
 FROM nginx:alpine
