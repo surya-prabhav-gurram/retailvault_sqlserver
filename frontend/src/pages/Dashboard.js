@@ -160,19 +160,20 @@ export default function Dashboard() {
               Welcome to RetailVault
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 620, lineHeight: 1.6 }}>
-              A full-stack retail data warehousing platform. Transactional data from <strong style={{color:'var(--text)'}}>SQL Server OLTP</strong> is
-              extracted via <strong style={{color:'var(--text)'}}>Spring Batch ETL</strong> into a <strong style={{color:'var(--text)'}}>star schema warehouse</strong> — powering real-time analytics.
+              A full-stack retail data warehousing platform. Transactional data from <strong style={{color:'var(--text)'}}>SQL Server 2022 OLTP</strong> is
+              extracted via <strong style={{color:'var(--text)'}}>T-SQL Stored Procedure ETL</strong> into a <strong style={{color:'var(--text)'}}>star schema warehouse</strong> — powering real-time analytics.
               Use the <strong style={{color:'var(--text)'}}>Demo Playground</strong> below to generate live orders and watch the pipeline in action.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {[
               { label: 'Spring Boot', color: '#10b981' },
-              { label: 'Spring Batch ETL', color: '#3b82f6' },
-              { label: 'Star Schema', color: '#8b5cf6' },
-              { label: 'SCD Type 2', color: '#f59e0b' },
+              { label: 'SQL Server 2022', color: '#3b82f6' },
+              { label: 'T-SQL Stored Procs', color: '#8b5cf6' },
+              { label: 'Columnstore Index', color: '#f59e0b' },
+              { label: 'Star Schema', color: '#ec4899' },
+              { label: 'SCD Type 2', color: '#f97316' },
               { label: 'React', color: '#06b6d4' },
-              { label: 'SQL Server', color: '#10b981' },
             ].map(t => (
               <span key={t.label} style={{
                 fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 4,
@@ -211,7 +212,7 @@ export default function Dashboard() {
                   color: s.color, cursor: demoLoading ? 'not-allowed' : 'pointer',
                   fontSize: 13, fontWeight: 600, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 160
                 }}>
-                <span>{demoLoading === s.key ? '⏳ Working...' : s.label}</span>
+                <span>{demoLoading === s.key ? 'Working...' : s.label}</span>
                 <span style={{ fontSize: 10, fontWeight: 400, opacity: 0.8 }}>{s.desc}</span>
               </button>
             ))}
@@ -351,7 +352,7 @@ export default function Dashboard() {
               </span>
               <button onClick={() => runScenario(SCENARIOS[2])} disabled={!!demoLoading}
                 style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #10b98155', background: '#10b98111', color: '#10b981', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                📦 Restock All
+                Restock All
               </button>
             </div>
             <table className="data-table">
